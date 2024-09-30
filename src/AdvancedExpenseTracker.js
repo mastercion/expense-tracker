@@ -35,6 +35,7 @@ const AdvancedExpenseTracker = () => {
     const [newCategory, setNewCategory] = useState('');
     const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
 
     useEffect(() => {
         console.log('Saving data to localStorage');
@@ -99,6 +100,34 @@ const AdvancedExpenseTracker = () => {
             setIsAddingNewCategory(false);
         }
     };
+
+    const editCategory = (index, newName) => {
+      setState(prevState => {
+          const newCategories = [...prevState.categories];
+          newCategories[index] = newName;
+          
+          // Update category names in expenses
+          const updateExpenses = (expenses) => 
+              expenses.map(expense => ({
+                  ...expense,
+                  category: expense.category === prevState.categories[index] ? newName : expense.category
+              }));
+
+          const newMonthlyData = Object.fromEntries(
+              Object.entries(prevState.monthlyData).map(([month, expenses]) => [month, updateExpenses(expenses)])
+          );
+
+          const newPermanentExpenses = updateExpenses(prevState.permanentExpenses);
+
+          return {
+              ...prevState,
+              categories: newCategories,
+              monthlyData: newMonthlyData,
+              permanentExpenses: newPermanentExpenses
+          };
+      });
+      setEditingCategory(null);
+  };
 
     const handleBudgetChange = (newBudget) => {
         console.log('Updating budget:', newBudget);
@@ -286,6 +315,24 @@ const AdvancedExpenseTracker = () => {
             </div>
 
             <div>
+                <h2 style={{color: state.darkMode ? '#ddd' : '#444'}}>Manage Categories</h2>
+                <ul style={{listStyle: 'none', padding: 0}}>
+                    {state.categories.map((category, index) => (
+                        <li key={index} style={listItemStyle}>
+                            {editingCategory === index ? (
+                                <input
+                                    type="text"
+                                    value={category}
+                                    onChange={(e) => editCategory(index, e.target.value)}
+                                    onBlur={() => setEditingCategory(null)}
+                                    style={inputStyle}
+                                />
+                            ) : (
+                                <span onClick={() => setEditingCategory(index)}>{category}</span>
+                            )}
+                        </li>
+                    ))}
+                </ul>
                 <label>
                     <input
                         type="checkbox"
